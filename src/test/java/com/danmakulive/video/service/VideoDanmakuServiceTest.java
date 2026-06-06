@@ -6,9 +6,13 @@ import com.danmakulive.video.model.entity.Video;
 import com.danmakulive.video.model.entity.VideoDanmaku;
 import com.danmakulive.video.model.mapper.VideoDanmakuMapper;
 import com.danmakulive.video.model.mapper.VideoMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,14 +24,22 @@ class VideoDanmakuServiceTest {
     private DanmakuPipeline pipeline;
     private VideoDanmakuMapper danmakuMapper;
     private VideoMapper videoMapper;
+    private StringRedisTemplate redis;
+    @SuppressWarnings("unchecked")
+    private ZSetOperations<String, String> zSetOps;
     private VideoDanmakuService service;
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         pipeline = mock(DanmakuPipeline.class);
         danmakuMapper = mock(VideoDanmakuMapper.class);
         videoMapper = mock(VideoMapper.class);
-        service = new VideoDanmakuService(pipeline, danmakuMapper, videoMapper);
+        redis = mock(StringRedisTemplate.class);
+        zSetOps = mock(ZSetOperations.class);
+        when(redis.opsForZSet()).thenReturn(zSetOps);
+        service = new VideoDanmakuService(pipeline, danmakuMapper, videoMapper,
+                redis, new ObjectMapper());
     }
 
     @Test

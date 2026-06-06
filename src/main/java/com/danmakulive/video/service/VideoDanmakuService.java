@@ -7,31 +7,46 @@ import com.danmakulive.danmaku.pipeline.DanmakuPipeline;
 import com.danmakulive.danmaku.pipeline.PipelineContext;
 import com.danmakulive.video.model.dto.DanmakuSegmentDTO;
 import com.danmakulive.video.model.dto.DensityDTO;
-import com.danmakulive.video.model.entity.VideoDanmaku;
 import com.danmakulive.video.model.entity.Video;
+import com.danmakulive.video.model.entity.VideoDanmaku;
 import com.danmakulive.video.model.mapper.VideoDanmakuMapper;
 import com.danmakulive.video.model.mapper.VideoMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class VideoDanmakuService {
 
+    private static final Logger log = LoggerFactory.getLogger(VideoDanmakuService.class);
     private static final int SEGMENT_SECONDS = 60;
+    private static final String CACHE_PREFIX = "video:danmaku:";
+    private static final Duration CACHE_TTL = Duration.ofHours(24);
 
     private final DanmakuPipeline pipeline;
     private final VideoDanmakuMapper danmakuMapper;
     private final VideoMapper videoMapper;
+    private final StringRedisTemplate redis;
+    private final ObjectMapper objectMapper;
 
     public VideoDanmakuService(DanmakuPipeline pipeline,
                                 VideoDanmakuMapper danmakuMapper,
-                                VideoMapper videoMapper) {
+                                VideoMapper videoMapper,
+                                StringRedisTemplate redis,
+                                ObjectMapper objectMapper) {
         this.pipeline = pipeline;
         this.danmakuMapper = danmakuMapper;
         this.videoMapper = videoMapper;
+        this.redis = redis;
+        this.objectMapper = objectMapper;
     }
 
     public String sendDanmaku(String videoId, String userId, String userName,
@@ -50,26 +65,54 @@ public class VideoDanmakuService {
         ctx.setPlaybackTime(playbackTime);
 
         pipeline.execute(ctx);
+
+        // 追加到 ZSET 缓存
+        if (!ctx.hasError() && ctx.getMessage() != null) {
+            try {
+                String json = objectMapper.writeValueAsString(toSegmentDTO(ctx));
+                String key = CACHE_PREFIX + videoId;
+                redis.opsForZSet().add(key, json, playbackTime);
+                redis.expire(key, CACHE_TTL);
+            } catch (JsonProcessingException e) {
+                log.warn("Failed to serialize danmaku for cache", e);
+            }
+        }
+
         return ctx.getError();
     }
 
     public List<DanmakuSegmentDTO> getSegments(String videoId, double from, double to) {
-        List<VideoDanmaku> list = danmakuMapper.selectList(
+        String key = CACHE_PREFIX + videoId;
+        // 1. 尝试缓存
+        Set<String> cached = redis.opsForZSet().rangeByScore(key, from, to - 0.001);
+        if (cached != null && !cached.isEmpty()) {
+            return cached.stream()
+                    .map(this::deserialize)
+                    .sorted(Comparator.comparingDouble(DanmakuSegmentDTO::getPlaybackTime))
+                    .collect(Collectors.toList());
+        }
+
+        // 2. 查 MySQL 全量弹幕
+        List<VideoDanmaku> all = danmakuMapper.selectList(
                 new LambdaQueryWrapper<VideoDanmaku>()
                         .eq(VideoDanmaku::getVideoId, videoId)
-                        .ge(VideoDanmaku::getPlaybackTime, from)
-                        .lt(VideoDanmaku::getPlaybackTime, to)
                         .orderByAsc(VideoDanmaku::getPlaybackTime));
 
-        return list.stream().map(dm -> {
-            DanmakuSegmentDTO dto = new DanmakuSegmentDTO();
-            dto.setId(dm.getId());
-            dto.setUserId(dm.getUserId());
-            dto.setUserName(dm.getUserName());
-            dto.setContent(dm.getContent());
-            dto.setPlaybackTime(dm.getPlaybackTime());
-            return dto;
-        }).collect(Collectors.toList());
+        // 3. 回种 ZSET
+        if (!all.isEmpty()) {
+            Set<ZSetOperations.TypedTuple<String>> tuples = all.stream()
+                    .map(dm -> ZSetOperations.TypedTuple.of(
+                            serialize(toSegmentDTO(dm)), dm.getPlaybackTime()))
+                    .collect(Collectors.toSet());
+            redis.opsForZSet().add(key, tuples);
+            redis.expire(key, CACHE_TTL);
+        }
+
+        // 4. 返回请求区间
+        return all.stream()
+                .filter(dm -> dm.getPlaybackTime() >= from && dm.getPlaybackTime() < to)
+                .map(this::toSegmentDTO)
+                .collect(Collectors.toList());
     }
 
     public List<DensityDTO> getDensity(String videoId) {
@@ -99,5 +142,41 @@ public class VideoDanmakuService {
             }
         }
         return result;
+    }
+
+    private DanmakuSegmentDTO toSegmentDTO(VideoDanmaku dm) {
+        DanmakuSegmentDTO dto = new DanmakuSegmentDTO();
+        dto.setId(dm.getId());
+        dto.setUserId(dm.getUserId());
+        dto.setUserName(dm.getUserName());
+        dto.setContent(dm.getContent());
+        dto.setPlaybackTime(dm.getPlaybackTime());
+        return dto;
+    }
+
+    private DanmakuSegmentDTO toSegmentDTO(PipelineContext ctx) {
+        DanmakuSegmentDTO dto = new DanmakuSegmentDTO();
+        dto.setId(ctx.getMessage().getId());
+        dto.setUserId(ctx.getUserId());
+        dto.setUserName(ctx.getUserName());
+        dto.setContent(ctx.getFilteredContent());
+        dto.setPlaybackTime(ctx.getPlaybackTime());
+        return dto;
+    }
+
+    private String serialize(DanmakuSegmentDTO dto) {
+        try {
+            return objectMapper.writeValueAsString(dto);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private DanmakuSegmentDTO deserialize(String json) {
+        try {
+            return objectMapper.readValue(json, DanmakuSegmentDTO.class);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 }
