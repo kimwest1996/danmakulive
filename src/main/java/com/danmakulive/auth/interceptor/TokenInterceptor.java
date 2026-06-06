@@ -1,5 +1,8 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.interceptor;
 
+import com.danmakulive.auth.context.UserHolder;
+import com.danmakulive.auth.model.dto.UserDTO;
+import com.danmakulive.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;

@@ -1,5 +1,11 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.controller;
 
+import com.danmakulive.auth.context.UserHolder;
+import com.danmakulive.auth.model.dto.AuthResponse;
+import com.danmakulive.auth.model.dto.LoginRequest;
+import com.danmakulive.auth.model.dto.RegisterRequest;
+import com.danmakulive.auth.model.dto.UserDTO;
+import com.danmakulive.auth.service.AuthService;
 import com.danmakulive.common.result.Result;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

@@ -1,5 +1,8 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.config;
 
+import com.danmakulive.auth.interceptor.AuthInterceptor;
+import com.danmakulive.auth.interceptor.TokenInterceptor;
+import com.danmakulive.auth.service.AuthService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

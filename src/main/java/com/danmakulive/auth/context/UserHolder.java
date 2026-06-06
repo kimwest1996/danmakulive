@@ -1,4 +1,6 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.context;
+
+import com.danmakulive.auth.model.dto.UserDTO;
 
 public class UserHolder {
 

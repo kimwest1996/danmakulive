@@ -1,5 +1,6 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.context;
 
+import com.danmakulive.auth.model.dto.UserDTO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

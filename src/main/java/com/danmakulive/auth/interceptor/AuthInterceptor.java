@@ -1,5 +1,6 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.interceptor;
 
+import com.danmakulive.auth.context.UserHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;

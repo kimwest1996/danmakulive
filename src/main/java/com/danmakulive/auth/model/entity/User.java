@@ -1,7 +1,7 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.danmakulive.common.BaseDO;
+import com.danmakulive.common.base.BaseDO;
 
 @TableName("user")
 public class User extends BaseDO {

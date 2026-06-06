@@ -1,6 +1,12 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.danmakulive.auth.model.dto.AuthResponse;
+import com.danmakulive.auth.model.dto.LoginRequest;
+import com.danmakulive.auth.model.dto.RegisterRequest;
+import com.danmakulive.auth.model.dto.UserDTO;
+import com.danmakulive.auth.model.entity.User;
+import com.danmakulive.auth.model.mapper.UserMapper;
 import com.danmakulive.common.exception.ClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

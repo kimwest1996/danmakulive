@@ -15,16 +15,42 @@
 - MySQL 8（弹幕归档、用户信息）
 - Spring Security Crypto（BCrypt 密码，无 Spring Security Filter）
 
-## 包结构（按特征分包）
+## 包结构（领域 + 内部分层）
 
 ```
 com.danmakulive/
-├── auth/         用户认证（注册、登录、TokenInterceptor）
-├── room/         直播间管理
-├── danmaku/      弹幕 Pipeline
-├── broadcast/    跨节点广播（Redis Pub/Sub）
-├── common/       通用基础设施（Result、异常、BaseDO）
-└── dev/          开发调试端点（@Profile("dev")）
+├── auth/
+│   ├── controller/     REST 端点
+│   ├── service/        业务逻辑
+│   ├── interceptor/    TokenInterceptor、AuthInterceptor
+│   ├── context/        UserHolder（ThreadLocal）
+│   ├── config/         AuthConfig（BCrypt bean + 拦截器注册）
+│   └── model/
+│       ├── entity/     User extends BaseDO
+│       ├── dto/        UserDTO, RegisterRequest, LoginRequest, AuthResponse
+│       └── mapper/     UserMapper extends BaseMapper
+├── common/
+│   ├── base/           BaseDO
+│   ├── exception/      ErrorCode, BaseErrorCode, AbstractException, ClientException, ServiceException
+│   ├── handler/        GlobalExceptionHandler
+│   ├── result/         Result<T>
+│   └── config/         MybatisPlusConfig
+├── config/             全局配置（WebSocket、Kafka 等，后续）
+├── dev/                开发调试端点（@Profile("dev")）
+├── room/               直播间（后续）
+├── danmaku/            弹幕 Pipeline（后续）
+└── broadcast/          跨节点广播（后续）
+```
+
+每个领域内部遵循相同的分层：controller → service → model(entity/dto/mapper) → config
+
+测试目录镜像 main 结构：
+```
+src/test/java/com/danmakulive/
+├── auth/
+│   ├── service/        AuthServiceTest
+│   └── context/        UserHolderTest
+└── common/             ResultTest
 ```
 
 ## 基础设施规范

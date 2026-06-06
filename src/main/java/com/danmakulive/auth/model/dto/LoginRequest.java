@@ -1,4 +1,4 @@
-package com.danmakulive.auth;
+package com.danmakulive.auth.model.dto;
 
 public class LoginRequest {
 

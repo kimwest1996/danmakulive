@@ -1,4 +1,4 @@
-package com.danmakulive.common;
+package com.danmakulive.common.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
