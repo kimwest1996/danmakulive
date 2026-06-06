@@ -74,6 +74,7 @@ mvn clean package         # 打包
 
 - P0 直播弹幕：已完成
 - P1 房间管理：已完成
-- P1 视频弹幕：已完成（发送/分段拉取/密度热力图）
-- P2 直播回放：已完成（STREAM_ENDED → ETL live_danmaku → video_danmaku）
-- 关键参考：`.claude/notes/specs/002-danmaku-pipeline.md`
+- P1 视频弹幕：已完成（发送/分段拉取/密度/Redis ZSET 缓存）
+- P2 直播回放：已完成
+- P1 视频上传：已完成（MinIO 分块上传 + SHA-256 秒传 + CallerRunsPolicy 线程池）
+- 关键参考：`.claude/notes/specs/002-danmaku-pipeline.md`、`004-video-upload.md`
