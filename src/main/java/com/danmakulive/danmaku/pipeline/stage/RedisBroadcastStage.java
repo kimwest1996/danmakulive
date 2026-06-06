@@ -28,7 +28,12 @@ public class RedisBroadcastStage implements PipelineStage {
     public void process(PipelineContext ctx) {
         try {
             String json = objectMapper.writeValueAsString(ctx.getMessage());
-            String channel = "room:" + ctx.getRoomId() + ":pubsub";
+            String channel;
+            if (ctx.isVideo()) {
+                channel = "video:" + ctx.getVideoId() + ":pubsub";
+            } else {
+                channel = "room:" + ctx.getRoomId() + ":pubsub";
+            }
             redisTemplate.convertAndSend(channel, json);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize danmaku message", e);

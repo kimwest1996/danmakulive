@@ -27,6 +27,7 @@ public class RedisPubSubConfig {
         container.setTaskExecutor(executor);
 
         container.addMessageListener(listener, new PatternTopic("room:*:pubsub"));
+        container.addMessageListener(listener, new PatternTopic("video:*:pubsub"));
         return container;
     }
 }

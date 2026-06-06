@@ -45,3 +45,25 @@ CREATE TABLE IF NOT EXISTS live_room (
     INDEX idx_owner (owner_id),
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Mock video (P1, pre-seeded)
+CREATE TABLE IF NOT EXISTS video (
+    id            VARCHAR(36)   PRIMARY KEY,
+    title         VARCHAR(128)  NOT NULL,
+    duration      INT           NOT NULL COMMENT '视频时长（秒）',
+    create_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Video danmaku (P1)
+CREATE TABLE IF NOT EXISTS video_danmaku (
+    id              VARCHAR(36)   PRIMARY KEY,
+    video_id        VARCHAR(36)   NOT NULL,
+    user_id         VARCHAR(36)   NOT NULL,
+    user_name       VARCHAR(64)   NOT NULL,
+    content         VARCHAR(255)  NOT NULL,
+    playback_time   DOUBLE        NOT NULL COMMENT '弹幕在视频中的时间位置（秒）',
+    create_time     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_video_time (video_id, playback_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

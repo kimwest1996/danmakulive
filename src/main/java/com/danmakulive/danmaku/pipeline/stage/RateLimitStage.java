@@ -18,7 +18,7 @@ public class RateLimitStage implements PipelineStage {
     private static final int ROOM_MAX = 1000;
     private static final int WINDOW_SECONDS = 1;
 
-    private static final String LUA_SCRIPT =
+    private static final String LIVE_SCRIPT =
             "local user_cnt = redis.call('INCR', KEYS[1])\n" +
             "if user_cnt == 1 then redis.call('EXPIRE', KEYS[1], ARGV[4]) end\n" +
             "if user_cnt > tonumber(ARGV[1]) then return 1 end\n" +
@@ -30,24 +30,46 @@ public class RateLimitStage implements PipelineStage {
             "if room_cnt > tonumber(ARGV[3]) then return 3 end\n" +
             "return 0";
 
+    private static final String VIDEO_SCRIPT =
+            "local ip_cnt = redis.call('INCR', KEYS[1])\n" +
+            "if ip_cnt == 1 then redis.call('EXPIRE', KEYS[1], ARGV[3]) end\n" +
+            "if ip_cnt > tonumber(ARGV[1]) then return 2 end\n" +
+            "local video_cnt = redis.call('INCR', KEYS[2])\n" +
+            "if video_cnt == 1 then redis.call('EXPIRE', KEYS[2], ARGV[3]) end\n" +
+            "if video_cnt > tonumber(ARGV[2]) then return 3 end\n" +
+            "return 0";
+
     private final StringRedisTemplate redisTemplate;
-    private final DefaultRedisScript<Long> script;
+    private final DefaultRedisScript<Long> liveScript;
+    private final DefaultRedisScript<Long> videoScript;
 
     public RateLimitStage(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
-        this.script = new DefaultRedisScript<>(LUA_SCRIPT, Long.class);
+        this.liveScript = new DefaultRedisScript<>(LIVE_SCRIPT, Long.class);
+        this.videoScript = new DefaultRedisScript<>(VIDEO_SCRIPT, Long.class);
     }
 
     @Override
     public void process(PipelineContext ctx) {
-        List<String> keys = List.of(
-                "rate:user:" + ctx.getUserId() + ":" + ctx.getRoomId(),
-                "rate:ip:" + ctx.getClientIp() + ":" + ctx.getRoomId(),
-                "rate:room:" + ctx.getRoomId()
-        );
-        Long result = redisTemplate.execute(script, keys,
-                String.valueOf(USER_MAX), String.valueOf(IP_MAX),
-                String.valueOf(ROOM_MAX), String.valueOf(WINDOW_SECONDS));
+        Long result;
+        if (ctx.isVideo()) {
+            List<String> keys = List.of(
+                    "rate:ip:" + ctx.getClientIp() + ":" + ctx.getVideoId(),
+                    "rate:video:" + ctx.getVideoId()
+            );
+            result = redisTemplate.execute(videoScript, keys,
+                    String.valueOf(IP_MAX), String.valueOf(ROOM_MAX),
+                    String.valueOf(WINDOW_SECONDS));
+        } else {
+            List<String> keys = List.of(
+                    "rate:user:" + ctx.getUserId() + ":" + ctx.getRoomId(),
+                    "rate:ip:" + ctx.getClientIp() + ":" + ctx.getRoomId(),
+                    "rate:room:" + ctx.getRoomId()
+            );
+            result = redisTemplate.execute(liveScript, keys,
+                    String.valueOf(USER_MAX), String.valueOf(IP_MAX),
+                    String.valueOf(ROOM_MAX), String.valueOf(WINDOW_SECONDS));
+        }
         if (result != null && result != 0) {
             ctx.setError("发送频率过快，请稍后再试");
         }

@@ -4,7 +4,7 @@
 
 高并发直播弹幕实时互动后端，求职导向项目。
 
-对外展示仓库 `github.com/caohanqing/danmakulive`，开发文档在 `.claude/notes/`（gitignore，不公开）。
+开发文档在 `.claude/notes/`（gitignore，不公开）。
 
 ## 技术栈
 
@@ -72,7 +72,8 @@ mvn clean package         # 打包
 
 ## 当前上下文
 
-- P0 直播弹幕：已完成并验证（限流/敏感词/广播/落库全部通过）
-- P1 房间管理：已完成（4 个 API + live_room 表）
-- 下一步：视频弹幕发送 + 分段拉取
+- P0 直播弹幕：已完成
+- P1 房间管理：已完成
+- P1 视频弹幕：已完成（发送/分段拉取/密度热力图）
+- 下一步：P2 直播回放转换
 - 关键参考：`.claude/notes/specs/002-danmaku-pipeline.md`

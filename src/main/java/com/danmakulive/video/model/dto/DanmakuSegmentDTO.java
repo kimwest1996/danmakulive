@@ -1,24 +1,15 @@
-package com.danmakulive.danmaku.model;
+package com.danmakulive.video.model.dto;
 
-public class DanmakuMessage {
+public class DanmakuSegmentDTO {
 
     private String id;
-    private String roomId;
-    private String videoId;
     private String userId;
     private String userName;
     private String content;
-    private Long sendTime;
     private Double playbackTime;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-
-    public String getRoomId() { return roomId; }
-    public void setRoomId(String roomId) { this.roomId = roomId; }
-
-    public String getVideoId() { return videoId; }
-    public void setVideoId(String videoId) { this.videoId = videoId; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -28,9 +19,6 @@ public class DanmakuMessage {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-
-    public Long getSendTime() { return sendTime; }
-    public void setSendTime(Long sendTime) { this.sendTime = sendTime; }
 
     public Double getPlaybackTime() { return playbackTime; }
     public void setPlaybackTime(Double playbackTime) { this.playbackTime = playbackTime; }

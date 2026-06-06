@@ -16,5 +16,6 @@ target/
 application-local.yml
 application-dev.yml
 
-# Dev notes (keep local, may become private repo later)
+# Dev notes (keep local)
 .claude/notes/
+.claude/CLAUDE.md

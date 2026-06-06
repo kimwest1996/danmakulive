@@ -17,10 +17,12 @@ public class MessageBuildStage implements PipelineStage {
         DanmakuMessage msg = new DanmakuMessage();
         msg.setId(UUID.randomUUID().toString());
         msg.setRoomId(ctx.getRoomId());
+        msg.setVideoId(ctx.getVideoId());
         msg.setUserId(ctx.getUserId());
         msg.setUserName(ctx.getUserName());
         msg.setContent(ctx.getFilteredContent());
         msg.setSendTime(System.currentTimeMillis());
+        msg.setPlaybackTime(ctx.getPlaybackTime());
         ctx.setMessage(msg);
     }
 }

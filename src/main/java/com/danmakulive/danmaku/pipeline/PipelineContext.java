@@ -4,7 +4,13 @@ import com.danmakulive.danmaku.model.DanmakuMessage;
 
 public class PipelineContext {
 
+    public static final String SCENE_LIVE = "LIVE";
+    public static final String SCENE_VIDEO = "VIDEO";
+
+    private String scene;
     private String roomId;
+    private String videoId;
+    private Double playbackTime;
     private String userId;
     private String userName;
     private String clientIp;
@@ -17,8 +23,20 @@ public class PipelineContext {
         return error != null;
     }
 
+    public boolean isLive() { return SCENE_LIVE.equals(scene); }
+    public boolean isVideo() { return SCENE_VIDEO.equals(scene); }
+
+    public String getScene() { return scene; }
+    public void setScene(String scene) { this.scene = scene; }
+
     public String getRoomId() { return roomId; }
     public void setRoomId(String roomId) { this.roomId = roomId; }
+
+    public String getVideoId() { return videoId; }
+    public void setVideoId(String videoId) { this.videoId = videoId; }
+
+    public Double getPlaybackTime() { return playbackTime; }
+    public void setPlaybackTime(Double playbackTime) { this.playbackTime = playbackTime; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
