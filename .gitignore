@@ -1,0 +1,20 @@
+# Build
+target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Secrets
+*.env
+.env.*
+application-local.yml
+application-dev.yml
+
+# Dev notes (keep local, may become private repo later)
+.claude/notes/
