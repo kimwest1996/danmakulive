@@ -3,9 +3,7 @@ package com.danmakulive.auth.config;
 import com.danmakulive.auth.interceptor.AuthInterceptor;
 import com.danmakulive.auth.interceptor.TokenInterceptor;
 import com.danmakulive.auth.service.AuthService;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -18,11 +16,6 @@ public class AuthConfig implements WebMvcConfigurer {
         this.authService = authService;
     }
 
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new TokenInterceptor(authService))
@@ -33,7 +26,9 @@ public class AuthConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/auth/register",
                         "/api/auth/login",
-                        "/api/rooms/**",
+                        "/api/rooms",
+                        "/api/rooms/*",
+                        "/api/rooms/*/danmaku/history",
                         "/ws",
                         "/ws-raw",
                         "/ws/**",
