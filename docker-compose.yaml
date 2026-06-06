@@ -49,5 +49,22 @@ services:
     depends_on:
       - zookeeper
 
+  # MinIO: use native macOS binary instead (Docker ARM64 has HTTP protocol issues)
+  #   brew install minio/stable/minio
+  #   minio server ~/minio-data --console-address ":9001"
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: danmakulive-minio
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   environment:
+  #     MINIO_ROOT_USER: minioadmin
+  #     MINIO_ROOT_PASSWORD: minioadmin
+  #   command: server /data --console-address ":9001"
+  #   volumes:
+  #     - minio-data:/data
+
 volumes:
   mysql-data:
+  minio-data:

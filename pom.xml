@@ -66,6 +66,13 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!-- MinIO (S3-compatible object storage) -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.14</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
