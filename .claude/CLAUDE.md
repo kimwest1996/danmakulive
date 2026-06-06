@@ -75,5 +75,5 @@ mvn clean package         # 打包
 - P0 直播弹幕：已完成
 - P1 房间管理：已完成
 - P1 视频弹幕：已完成（发送/分段拉取/密度热力图）
-- 下一步：P2 直播回放转换
+- P2 直播回放：已完成（STREAM_ENDED → ETL live_danmaku → video_danmaku）
 - 关键参考：`.claude/notes/specs/002-danmaku-pipeline.md`

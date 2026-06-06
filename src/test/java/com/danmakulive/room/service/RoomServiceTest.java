@@ -4,8 +4,11 @@ import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.room.model.dto.RoomResponse;
 import com.danmakulive.room.model.entity.LiveRoom;
 import com.danmakulive.room.model.mapper.LiveRoomMapper;
+import com.danmakulive.video.model.mapper.VideoMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.List;
 
@@ -16,12 +19,19 @@ import static org.mockito.Mockito.*;
 class RoomServiceTest {
 
     private LiveRoomMapper roomMapper;
+    private VideoMapper videoMapper;
+    private KafkaTemplate<String, String> kafkaTemplate;
+    private ObjectMapper objectMapper;
     private RoomService roomService;
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         roomMapper = mock(LiveRoomMapper.class);
-        roomService = new RoomService(roomMapper);
+        videoMapper = mock(VideoMapper.class);
+        kafkaTemplate = mock(KafkaTemplate.class);
+        objectMapper = new ObjectMapper();
+        roomService = new RoomService(roomMapper, videoMapper, kafkaTemplate, objectMapper);
     }
 
     @Test
