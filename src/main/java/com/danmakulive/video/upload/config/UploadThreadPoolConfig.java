@@ -1,4 +1,4 @@
-package com.danmakulive.video.config;
+package com.danmakulive.video.upload.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

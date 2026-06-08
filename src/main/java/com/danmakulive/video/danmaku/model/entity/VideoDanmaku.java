@@ -1,4 +1,4 @@
-package com.danmakulive.video.model.entity;
+package com.danmakulive.video.danmaku.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.danmakulive.common.base.BaseDO;

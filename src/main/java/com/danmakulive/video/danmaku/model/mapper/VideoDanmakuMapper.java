@@ -1,7 +1,7 @@
-package com.danmakulive.video.model.mapper;
+package com.danmakulive.video.danmaku.model.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.danmakulive.video.model.entity.VideoDanmaku;
+import com.danmakulive.video.danmaku.model.entity.VideoDanmaku;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

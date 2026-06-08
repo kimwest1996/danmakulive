@@ -1,4 +1,4 @@
-package com.danmakulive.video.model.dto;
+package com.danmakulive.video.danmaku.model.dto;
 
 public class DensityDTO {
 

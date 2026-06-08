@@ -1,16 +1,16 @@
-package com.danmakulive.video.controller;
+package com.danmakulive.video.upload.controller;
 
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.common.result.Result;
-import com.danmakulive.video.model.dto.CheckResponse;
-import com.danmakulive.video.model.dto.InitUploadRequest;
-import com.danmakulive.video.model.dto.InitUploadResponse;
-import com.danmakulive.video.service.VideoUploadService;
+import com.danmakulive.video.upload.model.dto.CheckResponse;
+import com.danmakulive.video.upload.model.dto.InitUploadRequest;
+import com.danmakulive.video.upload.model.dto.InitUploadResponse;
+import com.danmakulive.video.upload.service.VideoUploadService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/video/upload")
+@RequestMapping("/api/v1/video/upload")
 public class VideoUploadController {
 
     private final VideoUploadService service;

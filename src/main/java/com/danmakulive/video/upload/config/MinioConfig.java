@@ -1,4 +1,4 @@
-package com.danmakulive.video.config;
+package com.danmakulive.video.upload.config;
 
 import io.minio.MinioClient;
 import org.springframework.context.annotation.Bean;

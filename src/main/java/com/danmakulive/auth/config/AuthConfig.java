@@ -24,14 +24,14 @@ public class AuthConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(new AuthInterceptor())
                 .excludePathPatterns(
-                        "/api/auth/register",
-                        "/api/auth/login",
-                        "/api/rooms",
-                        "/api/rooms/*",
-                        "/api/rooms/*/danmaku/history",
-                        "/api/video/upload/check",
-                        "/api/video/*/danmaku/segments",
-                        "/api/video/*/danmaku/density",
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/login",
+                        "/api/v1/rooms",
+                        "/api/v1/rooms/*",
+                        "/api/v1/rooms/*/danmaku/history",
+                        "/api/v1/video/upload/check",
+                        "/api/v1/video/*/danmaku/segments",
+                        "/api/v1/video/*/danmaku/density",
                         "/ws",
                         "/ws-raw",
                         "/ws/**",

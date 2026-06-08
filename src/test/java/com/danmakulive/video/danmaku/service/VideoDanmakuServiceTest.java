@@ -1,10 +1,10 @@
-package com.danmakulive.video.service;
+package com.danmakulive.video.danmaku.service;
 
 import com.danmakulive.danmaku.pipeline.DanmakuPipeline;
 import com.danmakulive.danmaku.pipeline.PipelineContext;
 import com.danmakulive.video.model.entity.Video;
-import com.danmakulive.video.model.entity.VideoDanmaku;
-import com.danmakulive.video.model.mapper.VideoDanmakuMapper;
+import com.danmakulive.video.danmaku.model.entity.VideoDanmaku;
+import com.danmakulive.video.danmaku.model.mapper.VideoDanmakuMapper;
 import com.danmakulive.video.model.mapper.VideoMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

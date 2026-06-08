@@ -1,15 +1,15 @@
-package com.danmakulive.video.service;
+package com.danmakulive.video.danmaku.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.danmaku.pipeline.DanmakuPipeline;
 import com.danmakulive.danmaku.pipeline.PipelineContext;
-import com.danmakulive.video.model.dto.DanmakuSegmentDTO;
-import com.danmakulive.video.model.dto.DensityDTO;
+import com.danmakulive.video.danmaku.model.dto.DanmakuSegmentDTO;
+import com.danmakulive.video.danmaku.model.dto.DensityDTO;
 import com.danmakulive.video.model.entity.Video;
-import com.danmakulive.video.model.entity.VideoDanmaku;
-import com.danmakulive.video.model.mapper.VideoDanmakuMapper;
+import com.danmakulive.video.danmaku.model.entity.VideoDanmaku;
+import com.danmakulive.video.danmaku.model.mapper.VideoDanmakuMapper;
 import com.danmakulive.video.model.mapper.VideoMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

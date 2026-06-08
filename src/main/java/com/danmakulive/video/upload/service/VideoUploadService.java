@@ -1,15 +1,15 @@
-package com.danmakulive.video.service;
+package com.danmakulive.video.upload.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
-import com.danmakulive.video.model.dto.CheckResponse;
-import com.danmakulive.video.model.dto.InitUploadRequest;
-import com.danmakulive.video.model.dto.InitUploadResponse;
+import com.danmakulive.video.upload.model.dto.CheckResponse;
+import com.danmakulive.video.upload.model.dto.InitUploadRequest;
+import com.danmakulive.video.upload.model.dto.InitUploadResponse;
 import com.danmakulive.video.model.entity.Video;
-import com.danmakulive.video.model.entity.VideoUpload;
+import com.danmakulive.video.upload.model.entity.VideoUpload;
 import com.danmakulive.video.model.mapper.VideoMapper;
-import com.danmakulive.video.model.mapper.VideoUploadMapper;
+import com.danmakulive.video.upload.model.mapper.VideoUploadMapper;
 import io.minio.*;
 import io.minio.http.Method;
 import org.slf4j.Logger;

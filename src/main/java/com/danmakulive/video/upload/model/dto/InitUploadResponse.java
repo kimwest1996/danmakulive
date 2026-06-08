@@ -1,4 +1,4 @@
-package com.danmakulive.video.model.dto;
+package com.danmakulive.video.upload.model.dto;
 
 import java.util.List;
 

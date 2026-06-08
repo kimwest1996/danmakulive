@@ -1,21 +1,21 @@
-package com.danmakulive.video.controller;
+package com.danmakulive.video.danmaku.controller;
 
 import com.danmakulive.auth.context.UserHolder;
 import com.danmakulive.auth.model.dto.UserDTO;
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.common.result.Result;
-import com.danmakulive.video.model.dto.DanmakuSegmentDTO;
-import com.danmakulive.video.model.dto.DensityDTO;
-import com.danmakulive.video.model.dto.VideoDanmakuRequest;
-import com.danmakulive.video.service.VideoDanmakuService;
+import com.danmakulive.video.danmaku.model.dto.DanmakuSegmentDTO;
+import com.danmakulive.video.danmaku.model.dto.DensityDTO;
+import com.danmakulive.video.danmaku.model.dto.VideoDanmakuRequest;
+import com.danmakulive.video.danmaku.service.VideoDanmakuService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/video")
+@RequestMapping("/api/v1/video")
 public class VideoDanmakuController {
 
     private final VideoDanmakuService service;
