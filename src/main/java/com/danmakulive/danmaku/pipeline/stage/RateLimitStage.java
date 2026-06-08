@@ -13,65 +13,57 @@ import java.util.List;
 @Order(1)
 public class RateLimitStage implements PipelineStage {
 
-    private static final int USER_MAX = 5;
-    private static final int IP_MAX = 20;
-    private static final int ROOM_MAX = 1000;
-    private static final int WINDOW_SECONDS = 1;
+    private static final int USER_LIMIT = 5;
+    private static final int IP_LIMIT = 20;
+    private static final int ROOM_LIMIT = 1000;
+    private static final long WINDOW_MS = 1000;
 
-    private static final String LIVE_SCRIPT =
-            "local user_cnt = redis.call('INCR', KEYS[1])\n" +
-            "if user_cnt == 1 then redis.call('EXPIRE', KEYS[1], ARGV[4]) end\n" +
-            "if user_cnt > tonumber(ARGV[1]) then return 1 end\n" +
-            "local ip_cnt = redis.call('INCR', KEYS[2])\n" +
-            "if ip_cnt == 1 then redis.call('EXPIRE', KEYS[2], ARGV[4]) end\n" +
-            "if ip_cnt > tonumber(ARGV[2]) then return 2 end\n" +
-            "local room_cnt = redis.call('INCR', KEYS[3])\n" +
-            "if room_cnt == 1 then redis.call('EXPIRE', KEYS[3], ARGV[4]) end\n" +
-            "if room_cnt > tonumber(ARGV[3]) then return 3 end\n" +
-            "return 0";
+    // ZSET sliding window: ZREMRANGEBYSCORE removes expired entries, ZCARD counts current, ZADD appends
+    private static final String SLIDING_WINDOW_SCRIPT = """
+            local key = KEYS[1]
+            local now = tonumber(ARGV[1])
+            local limit = tonumber(ARGV[2])
 
-    private static final String VIDEO_SCRIPT =
-            "local ip_cnt = redis.call('INCR', KEYS[1])\n" +
-            "if ip_cnt == 1 then redis.call('EXPIRE', KEYS[1], ARGV[3]) end\n" +
-            "if ip_cnt > tonumber(ARGV[1]) then return 2 end\n" +
-            "local video_cnt = redis.call('INCR', KEYS[2])\n" +
-            "if video_cnt == 1 then redis.call('EXPIRE', KEYS[2], ARGV[3]) end\n" +
-            "if video_cnt > tonumber(ARGV[2]) then return 3 end\n" +
-            "return 0";
+            redis.call('ZREMRANGEBYSCORE', key, 0, now - %d)
+            local count = redis.call('ZCARD', key)
+            if count >= limit then
+                return 0
+            end
+            redis.call('ZADD', key, now, now .. ':' .. math.random())
+            redis.call('EXPIRE', key, %d)
+            return 1
+            """.formatted(WINDOW_MS, WINDOW_MS / 1000 + 1);
 
-    private final StringRedisTemplate redisTemplate;
-    private final DefaultRedisScript<Long> liveScript;
-    private final DefaultRedisScript<Long> videoScript;
+    private final StringRedisTemplate redis;
+    private final DefaultRedisScript<Long> script;
 
-    public RateLimitStage(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-        this.liveScript = new DefaultRedisScript<>(LIVE_SCRIPT, Long.class);
-        this.videoScript = new DefaultRedisScript<>(VIDEO_SCRIPT, Long.class);
+    public RateLimitStage(StringRedisTemplate redis) {
+        this.redis = redis;
+        this.script = new DefaultRedisScript<>(SLIDING_WINDOW_SCRIPT, Long.class);
     }
 
     @Override
     public void process(PipelineContext ctx) {
-        Long result;
+        long now = System.currentTimeMillis();
         if (ctx.isVideo()) {
-            List<String> keys = List.of(
-                    "rate:ip:" + ctx.getClientIp() + ":" + ctx.getVideoId(),
-                    "rate:video:" + ctx.getVideoId()
-            );
-            result = redisTemplate.execute(videoScript, keys,
-                    String.valueOf(IP_MAX), String.valueOf(ROOM_MAX),
-                    String.valueOf(WINDOW_SECONDS));
+            if (!tryAcquire("rl:ip:" + ctx.getClientIp(), now, IP_LIMIT) ||
+                    !tryAcquire("rl:video:" + ctx.getVideoId(), now, ROOM_LIMIT)) {
+                ctx.setError("发送频率过快，请稍后再试");
+            }
         } else {
-            List<String> keys = List.of(
-                    "rate:user:" + ctx.getUserId() + ":" + ctx.getRoomId(),
-                    "rate:ip:" + ctx.getClientIp() + ":" + ctx.getRoomId(),
-                    "rate:room:" + ctx.getRoomId()
-            );
-            result = redisTemplate.execute(liveScript, keys,
-                    String.valueOf(USER_MAX), String.valueOf(IP_MAX),
-                    String.valueOf(ROOM_MAX), String.valueOf(WINDOW_SECONDS));
+            if (!tryAcquire("rl:user:" + ctx.getUserId(), now, USER_LIMIT) ||
+                    !tryAcquire("rl:ip:" + ctx.getClientIp(), now, IP_LIMIT) ||
+                    !tryAcquire("rl:room:" + ctx.getRoomId(), now, ROOM_LIMIT)) {
+                ctx.setError("发送频率过快，请稍后再试");
+            }
         }
-        if (result != null && result != 0) {
-            ctx.setError("发送频率过快，请稍后再试");
-        }
+    }
+
+    private boolean tryAcquire(String key, long now, int limit) {
+        Long result = redis.execute(script,
+                List.of(key),
+                String.valueOf(now),
+                String.valueOf(limit));
+        return result != null && result == 1L;
     }
 }
