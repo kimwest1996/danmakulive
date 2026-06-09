@@ -84,7 +84,8 @@ public class RoomService {
         Video video = new Video();
         video.setId(UUID.randomUUID().toString().replace("-", "").substring(0, 24));
         video.setTitle(room.getTitle() + "（回放）");
-        video.setDuration(600); // mock: 10分钟回放
+        video.setDuration(600);
+        video.setOwnerId(room.getOwnerId());
         videoMapper.insert(video);
 
         room.setStatus(2);
@@ -112,6 +113,8 @@ public class RoomService {
         resp.setTitle(room.getTitle());
         resp.setOwnerId(room.getOwnerId());
         resp.setStatus(room.getStatus());
+        resp.setReplayVideoId(room.getReplayVideoId());
+        resp.setReplayStatus(room.getReplayStatus());
         resp.setStartedAt(room.getStartedAt());
         resp.setEndedAt(room.getEndedAt());
         return resp;

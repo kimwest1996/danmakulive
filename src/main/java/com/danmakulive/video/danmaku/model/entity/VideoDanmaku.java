@@ -12,6 +12,7 @@ public class VideoDanmaku extends BaseDO {
     private String userName;
     private String content;
     private Double playbackTime;
+    private Long sendTime;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -30,4 +31,7 @@ public class VideoDanmaku extends BaseDO {
 
     public Double getPlaybackTime() { return playbackTime; }
     public void setPlaybackTime(Double playbackTime) { this.playbackTime = playbackTime; }
+
+    public Long getSendTime() { return sendTime; }
+    public void setSendTime(Long sendTime) { this.sendTime = sendTime; }
 }

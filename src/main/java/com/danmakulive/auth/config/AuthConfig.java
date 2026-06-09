@@ -30,6 +30,7 @@ public class AuthConfig implements WebMvcConfigurer {
                         "/api/v1/rooms/*",
                         "/api/v1/rooms/*/danmaku/history",
                         "/api/v1/video/upload/check",
+                        "/api/v1/video/*/play",
                         "/api/v1/video/*/danmaku/segments",
                         "/api/v1/video/*/danmaku/density",
                         "/ws",

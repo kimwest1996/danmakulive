@@ -16,29 +16,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class VideoUploadService {
 
     private static final Logger log = LoggerFactory.getLogger(VideoUploadService.class);
-    private static final String BUCKET = "danmakulive-videos";
+    static final String BUCKET = "danmakulive-videos";
     private static final int PRESIGNED_MINUTES = 15;
 
     private final VideoUploadMapper uploadMapper;
     private final VideoMapper videoMapper;
     private final MinioClient minio;
-    private final ThreadPoolExecutor uploadThreadPool;
 
     public VideoUploadService(VideoUploadMapper uploadMapper, VideoMapper videoMapper,
-                               MinioClient minio, ThreadPoolExecutor uploadThreadPool) {
+                               MinioClient minio) {
         this.uploadMapper = uploadMapper;
         this.videoMapper = videoMapper;
         this.minio = minio;
-        this.uploadThreadPool = uploadThreadPool;
     }
 
     public CheckResponse check(String hash) {
@@ -118,7 +117,7 @@ public class VideoUploadService {
         return resp;
     }
 
-    public Video merge(String uploadId) {
+    public String merge(String uploadId, String ownerId) {
         VideoUpload upload = uploadMapper.selectById(uploadId);
         if (upload == null) {
             throw new ClientException("上传任务不存在", BaseErrorCode.NOT_FOUND);
@@ -127,44 +126,73 @@ public class VideoUploadService {
             throw new ClientException("已合并完成");
         }
 
-        // 异步合并（线程池 + CallerRunsPolicy 兜底）
-        uploadThreadPool.execute(() -> {
-            try {
-                // composeObject: 合并所有分块
-                List<ComposeSource> sources = new ArrayList<>();
-                for (int i = 0; i < upload.getChunkCount(); i++) {
-                    sources.add(ComposeSource.builder()
+        // composeObject: 合并所有分块
+        List<ComposeSource> sources = new ArrayList<>();
+        for (int i = 0; i < upload.getChunkCount(); i++) {
+            sources.add(ComposeSource.builder()
+                    .bucket(BUCKET)
+                    .object(upload.getObjectPath() + i)
+                    .build());
+        }
+        String mergedObject = upload.getObjectPath() + "merged.mp4";
+        try {
+            minio.composeObject(
+                    ComposeObjectArgs.builder()
                             .bucket(BUCKET)
-                            .object(upload.getObjectPath() + i)
+                            .object(mergedObject)
+                            .sources(sources)
                             .build());
-                }
-                String mergedObject = upload.getObjectPath() + "merged.mp4";
-                minio.composeObject(
-                        ComposeObjectArgs.builder()
+        } catch (Exception e) {
+            log.error("composeObject failed: uploadId={}", uploadId, e);
+            throw new RuntimeException("合并上传文件失败", e);
+        }
+
+        // 创建 video 记录
+        Video video = new Video();
+        video.setId(UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+        video.setTitle(upload.getFileName());
+        video.setDuration(600);
+        video.setOwnerId(ownerId);
+        video.setObjectKey(mergedObject);
+        videoMapper.insert(video);
+
+        // 更新 upload 状态
+        upload.setStatus(1);
+        upload.setVideoId(video.getId());
+        uploadMapper.updateById(upload);
+        log.info("Upload merged: uploadId={}, videoId={}", uploadId, video.getId());
+
+        // 清理分块 — fire-and-forget，不阻塞返回
+        CompletableFuture.runAsync(() -> deleteChunks(upload));
+
+        return video.getId();
+    }
+
+    void deleteChunks(VideoUpload upload) {
+        for (int i = 0; i < upload.getChunkCount(); i++) {
+            try {
+                minio.removeObject(
+                        RemoveObjectArgs.builder()
                                 .bucket(BUCKET)
-                                .object(mergedObject)
-                                .sources(sources)
+                                .object(upload.getObjectPath() + i)
                                 .build());
-
-                // 创建 video 记录
-                Video video = new Video();
-                video.setId(UUID.randomUUID().toString().replace("-", "").substring(0, 24));
-                video.setTitle(upload.getFileName());
-                video.setDuration(600);
-                videoMapper.insert(video);
-
-                // 更新 upload 状态
-                upload.setStatus(1);
-                upload.setVideoId(video.getId());
-                uploadMapper.updateById(upload);
-                log.info("Upload merged: uploadId={}, videoId={}", uploadId, video.getId());
-
-            } catch (Exception e) {
-                log.error("Merge failed: uploadId={}", uploadId, e);
+            } catch (Exception ignored) {
             }
-        });
+        }
+    }
 
-        return null; // 异步，不等待
+    public int cleanupStaleChunks() {
+        List<VideoUpload> uploads = uploadMapper.selectList(
+                new LambdaQueryWrapper<VideoUpload>()
+                        .eq(VideoUpload::getStatus, 1)
+                        .ge(VideoUpload::getCreateTime, LocalDateTime.now().minusHours(2)));
+        for (VideoUpload upload : uploads) {
+            deleteChunks(upload);
+        }
+        if (!uploads.isEmpty()) {
+            log.info("Cleaned up {} stale upload chunks", uploads.size());
+        }
+        return uploads.size();
     }
 
 }

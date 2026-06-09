@@ -1,11 +1,13 @@
 package com.danmakulive.video.upload.controller;
 
+import com.danmakulive.auth.context.UserHolder;
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.common.result.Result;
 import com.danmakulive.video.upload.model.dto.CheckResponse;
 import com.danmakulive.video.upload.model.dto.InitUploadRequest;
 import com.danmakulive.video.upload.model.dto.InitUploadResponse;
+import com.danmakulive.video.upload.model.dto.MergeResponse;
 import com.danmakulive.video.upload.service.VideoUploadService;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,8 +41,9 @@ public class VideoUploadController {
     }
 
     @PostMapping("/{uploadId}/merge")
-    public Result<String> merge(@PathVariable String uploadId) {
-        service.merge(uploadId);
-        return Result.success(uploadId + " merging");
+    public Result<MergeResponse> merge(@PathVariable String uploadId) {
+        String userId = UserHolder.getUser().getId();
+        String videoId = service.merge(uploadId, userId);
+        return Result.success(new MergeResponse(videoId));
     }
 }

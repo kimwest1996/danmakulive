@@ -41,9 +41,17 @@ public class ReplayConverter {
             log.info("Converting replay: roomId={}, videoId={}", event.getRoomId(), event.getVideoId());
 
             LiveRoom room = roomMapper.selectById(event.getRoomId());
-            if (room == null || room.getReplayStatus() != 1) {
-                log.warn("Skip replay conversion: room={}, replayStatus={}",
-                        event.getRoomId(), room != null ? room.getReplayStatus() : "null");
+            if (room == null) {
+                log.warn("Skip replay conversion: room not found, roomId={}", event.getRoomId());
+                return;
+            }
+            // 幂等保护：已完成则跳过
+            if (room.getReplayStatus() == 2) {
+                log.info("Replay already converted: roomId={}", event.getRoomId());
+                return;
+            }
+            if (room.getReplayStatus() != 1) {
+                log.warn("Skip replay conversion: room={}, replayStatus={}", event.getRoomId(), room.getReplayStatus());
                 return;
             }
 
@@ -69,6 +77,7 @@ public class ReplayConverter {
                     vd.setUserName(dm.getUserName());
                     vd.setContent(dm.getContent());
                     vd.setPlaybackTime((dm.getSendTime() - startedAtMs) / 1000.0);
+                    vd.setSendTime(dm.getSendTime());
                     videoDanmakuMapper.insert(vd);
                     total++;
                 }
@@ -81,6 +90,11 @@ public class ReplayConverter {
             roomMapper.updateById(room);
             log.info("Replay conversion done: roomId={}, videoId={}, total={}",
                     event.getRoomId(), event.getVideoId(), total);
+
+            // 清理 live_danmaku：已转存到 video_danmaku，历史查询走回放
+            int deleted = liveDanmakuMapper.delete(
+                    new LambdaQueryWrapper<LiveDanmaku>().eq(LiveDanmaku::getRoomId, event.getRoomId()));
+            log.info("Cleaned live_danmaku: roomId={}, deleted={}", event.getRoomId(), deleted);
 
         } catch (Exception e) {
             log.error("Failed to convert replay: {}", eventJson, e);

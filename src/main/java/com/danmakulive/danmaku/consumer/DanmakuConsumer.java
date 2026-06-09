@@ -40,6 +40,7 @@ public class DanmakuConsumer {
                 entity.setUserName(dm.getUserName());
                 entity.setContent(dm.getContent());
                 entity.setPlaybackTime(dm.getPlaybackTime());
+                entity.setSendTime(dm.getSendTime());
                 videoDanmakuMapper.insert(entity);
             } else {
                 LiveDanmaku entity = new LiveDanmaku();

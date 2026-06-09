@@ -8,6 +8,8 @@ public class RoomResponse {
     private String title;
     private String ownerId;
     private Integer status;
+    private String replayVideoId;
+    private Integer replayStatus;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 
@@ -22,6 +24,12 @@ public class RoomResponse {
 
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+
+    public String getReplayVideoId() { return replayVideoId; }
+    public void setReplayVideoId(String replayVideoId) { this.replayVideoId = replayVideoId; }
+
+    public Integer getReplayStatus() { return replayStatus; }
+    public void setReplayStatus(Integer replayStatus) { this.replayStatus = replayStatus; }
 
     public LocalDateTime getStartedAt() { return startedAt; }
     public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
