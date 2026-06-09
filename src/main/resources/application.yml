@@ -32,6 +32,10 @@ spring:
       enable-auto-commit: true
       auto-commit-interval: 1000
 
+  cache:
+    type: caffeine
+    cache-names: tokenUser
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -49,7 +53,19 @@ minio:
 
 server:
   port: 8080
+  compression:
+    enabled: true
+    min-response-size: 1024
 
 logging:
   level:
     com.danmakulive: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always

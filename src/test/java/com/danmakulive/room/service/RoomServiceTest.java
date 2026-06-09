@@ -1,5 +1,7 @@
 package com.danmakulive.room.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.room.model.dto.RoomResponse;
 import com.danmakulive.room.model.entity.LiveRoom;
@@ -50,15 +52,18 @@ class RoomServiceTest {
     @Test
     void listLiveRoomsOnlyLive() {
         LiveRoom room1 = buildRoom("r1", "Room 1", 1);
-        LiveRoom room2 = buildRoom("r2", "Room 2", 2);
         LiveRoom room3 = buildRoom("r3", "Room 3", 1);
-        when(roomMapper.selectList(any())).thenReturn(List.of(room1, room3));
+        IPage<LiveRoom> mockPage = new Page<>(1, 20);
+        mockPage.setRecords(List.of(room1, room3));
+        mockPage.setTotal(2);
+        doReturn(mockPage).when(roomMapper).selectPage(any(Page.class), any());
 
-        List<RoomResponse> list = roomService.listLiveRooms();
+        IPage<RoomResponse> result = roomService.listLiveRooms(1, 20);
 
-        assertEquals(2, list.size());
-        assertEquals("Room 1", list.get(0).getTitle());
-        assertEquals("Room 3", list.get(1).getTitle());
+        assertEquals(2, result.getTotal());
+        assertEquals(2, result.getRecords().size());
+        assertEquals("Room 1", result.getRecords().get(0).getTitle());
+        assertEquals("Room 3", result.getRecords().get(1).getTitle());
     }
 
     @Test

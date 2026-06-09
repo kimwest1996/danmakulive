@@ -2,17 +2,24 @@ package com.danmakulive.danmaku.pipeline.stage;
 
 import com.danmakulive.danmaku.pipeline.PipelineContext;
 import com.danmakulive.danmaku.pipeline.PipelineStage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @Order(1)
 public class RateLimitStage implements PipelineStage {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimitStage.class);
     private static final int USER_LIMIT = 5;
     private static final int IP_LIMIT = 20;
     private static final int ROOM_LIMIT = 1000;
@@ -36,6 +43,8 @@ public class RateLimitStage implements PipelineStage {
 
     private final StringRedisTemplate redis;
     private final DefaultRedisScript<Long> script;
+    private final ConcurrentHashMap<String, Deque<Long>> localWindows = new ConcurrentHashMap<>();
+    private final AtomicBoolean degraded = new AtomicBoolean(false);
 
     public RateLimitStage(StringRedisTemplate redis) {
         this.redis = redis;
@@ -60,10 +69,38 @@ public class RateLimitStage implements PipelineStage {
     }
 
     private boolean tryAcquire(String key, long now, int limit) {
-        Long result = redis.execute(script,
-                List.of(key),
-                String.valueOf(now),
-                String.valueOf(limit));
-        return result != null && result == 1L;
+        try {
+            Long result = redis.execute(script,
+                    List.of(key),
+                    String.valueOf(now),
+                    String.valueOf(limit));
+            // Redis 恢复正常
+            if (degraded.compareAndSet(true, false)) {
+                log.info("Redis rate limiting recovered, key={}", key);
+            }
+            return result != null && result == 1L;
+        } catch (Exception e) {
+            // 降级为本地限流
+            if (degraded.compareAndSet(false, true)) {
+                log.warn("Redis unavailable, falling back to local rate limiting");
+            }
+            return localTryAcquire(key, now, limit);
+        }
+    }
+
+    private boolean localTryAcquire(String key, long now, int limit) {
+        Deque<Long> window = localWindows.computeIfAbsent(key, k -> new ConcurrentLinkedDeque<>());
+        synchronized (window) {
+            // 移除过期时间戳
+            long threshold = now - WINDOW_MS;
+            while (!window.isEmpty() && window.peekFirst() < threshold) {
+                window.pollFirst();
+            }
+            if (window.size() >= limit) {
+                return false;
+            }
+            window.addLast(now);
+            return true;
+        }
     }
 }

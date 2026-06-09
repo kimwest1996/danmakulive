@@ -11,6 +11,8 @@ import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -99,12 +101,14 @@ public class AuthService {
         return buildResponse(user, token);
     }
 
+    @CacheEvict(value = "tokenUser", key = "#token")
     public void logout(String token) {
         if (token != null && !token.isEmpty()) {
             redis.delete(TOKEN_PREFIX + token);
         }
     }
 
+    @Cacheable(value = "tokenUser", key = "#token", unless = "#result == null")
     public UserDTO resolveToken(String token) {
         if (token == null || token.isEmpty()) {
             return null;

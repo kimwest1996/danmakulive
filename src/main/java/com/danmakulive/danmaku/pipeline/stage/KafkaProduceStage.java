@@ -29,7 +29,11 @@ public class KafkaProduceStage implements PipelineStage {
     public void process(PipelineContext ctx) {
         try {
             String json = objectMapper.writeValueAsString(ctx.getMessage());
-            kafkaTemplate.send(TOPIC, ctx.getRoomId(), json);
+            kafkaTemplate.send(TOPIC, ctx.getRoomId(), json).whenComplete((result, ex) -> {
+                if (ex != null) {
+                    log.warn("Kafka send failed: roomId={}, danmakuId={}", ctx.getRoomId(), ctx.getMessage().getId(), ex);
+                }
+            });
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize danmaku for Kafka", e);
         }

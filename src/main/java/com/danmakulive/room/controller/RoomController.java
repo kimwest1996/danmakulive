@@ -1,5 +1,6 @@
 package com.danmakulive.room.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.danmakulive.auth.context.UserHolder;
 import com.danmakulive.auth.model.dto.UserDTO;
 import com.danmakulive.common.exception.BaseErrorCode;
@@ -9,8 +10,6 @@ import com.danmakulive.room.model.dto.CreateRoomRequest;
 import com.danmakulive.room.model.dto.RoomResponse;
 import com.danmakulive.room.service.RoomService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/rooms")
@@ -36,8 +35,10 @@ public class RoomController {
     }
 
     @GetMapping
-    public Result<List<RoomResponse>> listRooms() {
-        return Result.success(roomService.listLiveRooms());
+    public Result<IPage<RoomResponse>> listRooms(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.success(roomService.listLiveRooms(page, size));
     }
 
     @GetMapping("/{roomId}")

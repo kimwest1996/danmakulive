@@ -1,6 +1,8 @@
 package com.danmakulive.room.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.danmakulive.common.exception.BaseErrorCode;
 import com.danmakulive.common.exception.ClientException;
 import com.danmakulive.room.model.StreamEndedEvent;
@@ -17,9 +19,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -52,12 +52,13 @@ public class RoomService {
         return toResponse(room);
     }
 
-    public List<RoomResponse> listLiveRooms() {
-        List<LiveRoom> rooms = roomMapper.selectList(
+    public IPage<RoomResponse> listLiveRooms(int page, int size) {
+        IPage<LiveRoom> roomPage = roomMapper.selectPage(
+                new Page<>(page, size),
                 new LambdaQueryWrapper<LiveRoom>()
                         .eq(LiveRoom::getStatus, 1)
                         .orderByDesc(LiveRoom::getStartedAt));
-        return rooms.stream().map(this::toResponse).collect(Collectors.toList());
+        return roomPage.convert(this::toResponse);
     }
 
     public RoomResponse getRoom(String roomId) {

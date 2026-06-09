@@ -92,15 +92,20 @@ public class VideoDanmakuService {
                     .collect(Collectors.toList());
         }
 
-        // 2. 查 MySQL 全量弹幕
-        List<VideoDanmaku> all = danmakuMapper.selectList(
+        // 2. 只查询请求区间 + 两侧 buffer 的弹幕，回种 ZSET
+        double buffer = to - from;
+        double queryFrom = Math.max(0, from - buffer);
+        double queryTo = to + buffer;
+
+        List<VideoDanmaku> list = danmakuMapper.selectList(
                 new LambdaQueryWrapper<VideoDanmaku>()
                         .eq(VideoDanmaku::getVideoId, videoId)
+                        .ge(VideoDanmaku::getPlaybackTime, queryFrom)
+                        .le(VideoDanmaku::getPlaybackTime, queryTo)
                         .orderByAsc(VideoDanmaku::getPlaybackTime));
 
-        // 3. 回种 ZSET
-        if (!all.isEmpty()) {
-            Set<ZSetOperations.TypedTuple<String>> tuples = all.stream()
+        if (!list.isEmpty()) {
+            Set<ZSetOperations.TypedTuple<String>> tuples = list.stream()
                     .map(dm -> ZSetOperations.TypedTuple.of(
                             serialize(toSegmentDTO(dm)), dm.getPlaybackTime()))
                     .collect(Collectors.toSet());
@@ -108,8 +113,7 @@ public class VideoDanmakuService {
             redis.expire(key, CACHE_TTL);
         }
 
-        // 4. 返回请求区间
-        return all.stream()
+        return list.stream()
                 .filter(dm -> dm.getPlaybackTime() >= from && dm.getPlaybackTime() < to)
                 .map(this::toSegmentDTO)
                 .collect(Collectors.toList());
@@ -120,28 +124,7 @@ public class VideoDanmakuService {
         if (video == null) {
             throw new ClientException("视频不存在", BaseErrorCode.NOT_FOUND);
         }
-
-        List<VideoDanmaku> all = danmakuMapper.selectList(
-                new LambdaQueryWrapper<VideoDanmaku>()
-                        .eq(VideoDanmaku::getVideoId, videoId)
-                        .orderByAsc(VideoDanmaku::getPlaybackTime));
-
-        int segments = (video.getDuration() / SEGMENT_SECONDS) + 1;
-        int[] counts = new int[segments];
-        for (VideoDanmaku dm : all) {
-            int seg = (int) (dm.getPlaybackTime() / SEGMENT_SECONDS);
-            if (seg < segments) {
-                counts[seg]++;
-            }
-        }
-
-        List<DensityDTO> result = new ArrayList<>();
-        for (int i = 0; i < segments; i++) {
-            if (counts[i] > 0) {
-                result.add(new DensityDTO(i * SEGMENT_SECONDS, counts[i]));
-            }
-        }
-        return result;
+        return danmakuMapper.selectDensity(videoId);
     }
 
     private DanmakuSegmentDTO toSegmentDTO(VideoDanmaku dm) {
