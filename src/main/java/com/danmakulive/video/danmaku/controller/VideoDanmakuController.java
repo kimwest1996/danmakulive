@@ -27,7 +27,8 @@ public class VideoDanmakuController {
     @PostMapping("/{videoId}/danmaku")
     public Result<Void> sendDanmaku(@PathVariable String videoId,
                                      @RequestBody VideoDanmakuRequest request,
-                                     HttpServletRequest httpRequest) {
+                                     HttpServletRequest httpRequest,
+                                     @RequestParam(defaultValue = "false") boolean bypassRateLimit) {
         UserDTO user = UserHolder.getUser();
         String content = request.getContent();
         if (content == null || content.trim().isEmpty()) {
@@ -43,7 +44,7 @@ public class VideoDanmakuController {
         String clientIp = httpRequest.getRemoteAddr();
         String error = service.sendDanmaku(
                 videoId, user.getId(), user.getNickName(), clientIp,
-                content.trim(), request.getPlaybackTime());
+                content.trim(), request.getPlaybackTime(), bypassRateLimit);
 
         if (error != null) {
             return Result.failure("RATE_LIMITED", error);
@@ -55,8 +56,9 @@ public class VideoDanmakuController {
     public Result<List<DanmakuSegmentDTO>> getSegments(
             @PathVariable String videoId,
             @RequestParam double from,
-            @RequestParam double to) {
-        return Result.success(service.getSegments(videoId, from, to));
+            @RequestParam double to,
+            @RequestParam(defaultValue = "caffeine") String cacheMode) {
+        return Result.success(service.getSegments(videoId, from, to, cacheMode));
     }
 
     @GetMapping("/{videoId}/danmaku/density")

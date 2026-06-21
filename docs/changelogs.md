@@ -1,5 +1,60 @@
 # Changelogs
 
+## 2026-06-09: 性能测试体系迁移重建
+
+### 问题背景
+
+LivePulse 原项目有完善的 5 维度性能测试体系（Pipeline 吞吐 / 广播延迟 / 连接容量 / Kafka 持久化 / 限流器），迁移到 danmakulive 后全部丢失，当前仅有一个 JMH 微基准 `BroadcastPerConnectionBenchmark`。
+
+### 方案设计
+
+按三层重建：JMH 微基准（Layer 1）→ JUnit 集成性能测试（Layer 2）→ Gatling 端到端压测（Layer 3）：
+
+- **Layer 1**: 新增 `RateLimitStageBenchmark`（Redis Lua 执行延迟）+ `SensitiveWordFilterBenchmark`（DFA 过滤性能，6种输入场景）
+- **Layer 2**: 新增 `RateLimiterPerfTest`（正确性3项 + 延迟测量）、`PipelineThroughputTest`（单线程 + 多线程 c10/50/100）、`WebSocketBroadcastLatencyTest` + `WebSocketCapacityTest`（独立 main 程序，从 LivePulse 迁移）
+- **Layer 3**: 新增 `danmakulive-gatling/` 独立项目，含 `DanmakuSimulation`（稳态）、`SpikeSimulation`（突刺）、`BroadcastLatencySimulation`（广播延迟）三个 STOMP WebSocket 压测场景
+- **辅助**: `scripts/perf/create_room.sh`（创建房间+获取 token）、`warmup.sh`（预热）、`run_all.sh`（一键运行全部测试）；`docs/perf/` 报告模板
+
+关键差异：danmakulive 的 RateLimitStage 已将 user/IP/room 三级限流合并到一个 Lua 脚本（一次 Redis 往返），而 LivePulse 是三次往返（1.26ms），预期性能显著提升。
+
+### 文件变更清单
+
+| # | 文件 | 改动说明 |
+|---|------|----------|
+| 1 | `src/test/java/.../benchmark/RateLimitStageBenchmark.java` | 新增：JMH Redis Lua 执行微基准（freshKey/hotKey/threeKeys） |
+| 2 | `src/test/java/.../benchmark/SensitiveWordFilterBenchmark.java` | 新增：JMH DFA 过滤微基准（6种文本/命中率组合） |
+| 3 | `src/test/java/.../perf/RateLimiterPerfTest.java` | 新增：限流器正确性 + 1000次平均延迟 |
+| 4 | `src/test/java/.../perf/PipelineThroughputTest.java` | 新增：SpringBootTest 全链路单线程 + 多线程吞吐 |
+| 5 | `src/test/java/.../perf/WebSocketBroadcastLatencyTest.java` | 新增：N订阅者+M消息端到端延迟（独立main） |
+| 6 | `src/test/java/.../perf/WebSocketCapacityTest.java` | 新增：逐步递增连接数测容量上限（独立main） |
+| 7 | `danmakulive-gatling/pom.xml` | 新增：Gatling 3.10.5 独立项目 POM |
+| 8 | `danmakulive-gatling/src/test/scala/.../DanmakuSimulation.scala` | 新增：稳态负载 STOMP WS 压测 |
+| 9 | `danmakulive-gatling/src/test/scala/.../SpikeSimulation.scala` | 新增：突刺压测（基线200→尖峰2000→回落） |
+| 10 | `danmakulive-gatling/src/test/scala/.../BroadcastLatencySimulation.scala` | 新增：广播延迟测量 |
+| 11 | `danmakulive-gatling/src/test/resources/application.conf` | 新增：Gatling 配置 |
+| 12 | `danmakulive-gatling/src/test/resources/logback-test.xml` | 新增：Gatling 日志配置 |
+| 13 | `scripts/perf/create_room.sh` | 新增：创建测试房间 + 获取 token |
+| 14 | `scripts/perf/warmup.sh` | 新增：预热脚本（ab 或 curl） |
+| 15 | `scripts/perf/run_all.sh` | 新增：一键运行全部测试 + 生成报告 |
+| 16 | `docs/perf/` | 新增：性能测试报告目录 |
+| 17 | `docs/project-notes.md` | 追加 §6 性能测试体系章节 |
+| 18 | `docs/changelogs.md` | 本文档 |
+
+### 提交记录
+
+| 时间 | commit hash | commit message |
+|------|-------------|----------------|
+
+### 验证步骤
+
+- [x] `mvn test-compile` 通过（新增 6 个 Java 文件全部编译）
+- [x] Gatling 项目 `pom.xml` 结构完整
+- [ ] `mvn test -Dtest="com.danmakulive.perf.RateLimiterPerfTest"` — 需 docker-compose up（Redis） + dev profile
+- [ ] `mvn test -Dtest="com.danmakulive.perf.PipelineThroughputTest" -Dspring.profiles.active=dev` — 需 Redis + Kafka
+- [ ] `java com.danmakulive.perf.WebSocketBroadcastLatencyTest 50 100 <roomId> <token>` — 需应用运行
+- [ ] `java com.danmakulive.perf.WebSocketCapacityTest <roomId>` — 需应用运行
+- [ ] `cd danmakulive-gatling && mvn gatling:test -Dusers=50 -DroomId=<roomId>` — 需应用运行
+
 ## 2026-06-09: 性能优化 — 缓存分层 + 全量查询修复 + Gzip
 
 ### 问题背景

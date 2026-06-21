@@ -16,6 +16,14 @@ target/
 application-local.yml
 application-dev.yml
 
+# Logs
+*.log
+
+# JMeter results
+*.jtl
+danmakulive-jmeter/report*/
+danmakulive-jmeter/segments_*/
+
 # Dev notes (keep local)
 .claude/notes/
 .claude/CLAUDE.md

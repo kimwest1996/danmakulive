@@ -7,6 +7,7 @@ import com.danmakulive.video.danmaku.model.entity.VideoDanmaku;
 import com.danmakulive.video.danmaku.model.mapper.VideoDanmakuMapper;
 import com.danmakulive.video.model.mapper.VideoMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +28,8 @@ class VideoDanmakuServiceTest {
     private StringRedisTemplate redis;
     @SuppressWarnings("unchecked")
     private ZSetOperations<String, String> zSetOps;
+    @SuppressWarnings("unchecked")
+    private Cache<String, Object> videoSegmentCache;
     private VideoDanmakuService service;
 
     @SuppressWarnings("unchecked")
@@ -37,9 +40,10 @@ class VideoDanmakuServiceTest {
         videoMapper = mock(VideoMapper.class);
         redis = mock(StringRedisTemplate.class);
         zSetOps = mock(ZSetOperations.class);
+        videoSegmentCache = mock(Cache.class);
         when(redis.opsForZSet()).thenReturn(zSetOps);
         service = new VideoDanmakuService(pipeline, danmakuMapper, videoMapper,
-                redis, new ObjectMapper());
+                redis, new ObjectMapper(), videoSegmentCache);
     }
 
     @Test

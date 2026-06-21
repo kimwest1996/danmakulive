@@ -18,6 +18,7 @@ public class PipelineContext {
     private String filteredContent;
     private DanmakuMessage message;
     private String error;
+    private boolean bypassRateLimit;
 
     public boolean hasError() {
         return error != null;
@@ -58,4 +59,7 @@ public class PipelineContext {
 
     public String getError() { return error; }
     public void setError(String error) { this.error = error; }
+
+    public boolean isBypassRateLimit() { return bypassRateLimit; }
+    public void setBypassRateLimit(boolean bypassRateLimit) { this.bypassRateLimit = bypassRateLimit; }
 }

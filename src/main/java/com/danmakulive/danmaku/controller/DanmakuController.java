@@ -31,7 +31,8 @@ public class DanmakuController {
     @PostMapping("/{roomId}/danmaku")
     public Result<Void> sendDanmaku(@PathVariable String roomId,
                                   @RequestBody DanmakuRequest request,
-                                  HttpServletRequest httpRequest) {
+                                  HttpServletRequest httpRequest,
+                                  @RequestParam(defaultValue = "false") boolean bypassRateLimit) {
         UserDTO user = UserHolder.getUser();
         String content = request.getContent();
         if (content == null || content.trim().isEmpty()) {
@@ -43,7 +44,7 @@ public class DanmakuController {
 
         String clientIp = httpRequest.getRemoteAddr();
         String error = danmakuService.processDanmaku(
-                roomId, user.getId(), user.getNickName(), clientIp, content.trim());
+                roomId, user.getId(), user.getNickName(), clientIp, content.trim(), bypassRateLimit);
 
         if (error != null) {
             return Result.failure("RATE_LIMITED", error);

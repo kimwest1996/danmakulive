@@ -21,4 +21,17 @@ public class CacheConfig {
                 .expireAfterWrite(5, TimeUnit.MINUTES));
         return manager;
     }
+
+    /**
+     * 视频弹幕分段查询 L1 本地缓存
+     * key = videoId:segmentIndex, 按 60s 粒度分片
+     */
+    @Bean
+    public com.github.benmanes.caffeine.cache.Cache<String, Object> videoSegmentCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(5000)
+                .expireAfterWrite(2, TimeUnit.MINUTES)
+                .recordStats()
+                .build();
+    }
 }

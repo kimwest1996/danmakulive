@@ -226,6 +226,29 @@ P1 功能，追踪 MinIO 分块上传状态，支持 SHA-256 秒传。
                 └─ GET /api/v1/video/{id}/play → MinIO GET 预签名 URL → 前端播放
 ```
 
+## 测试数据
+
+通过 `scripts/import_data.py` 从公开数据集导入：
+
+| 表 | 数据量 | 来源 |
+|----|--------|------|
+| user | 300 | channels.csv 频道房主 |
+| live_room | 300 | VTuber 1B Elements — 1359 频道取前 300 |
+| live_danmaku | 512,501 | sensai — YouTube VTuber 直播聊天，真实日/英弹幕 |
+| video | 102 | 100 生成 + 2 mock |
+| video_danmaku | 50,000 | 从 live_danmaku 采样生成 |
+
+数据来源详见 `.claude/notes/decisions.md` §11。
+
+使用方式：
+```bash
+# 完整导入（需 Docker MySQL 运行）
+python3 scripts/import_data.py --generate-video --limit 500000
+
+# 仅直播数据（需 Kaggle API key）
+python3 scripts/import_data.py --skip-video
+```
+
 ## 缓存策略（Redis）
 
 | 数据 | Redis 结构 | 说明 |

@@ -53,6 +53,9 @@ public class RateLimitStage implements PipelineStage {
 
     @Override
     public void process(PipelineContext ctx) {
+        if (ctx.isBypassRateLimit()) {
+            return;
+        }
         long now = System.currentTimeMillis();
         if (ctx.isVideo()) {
             if (!tryAcquire("rl:ip:" + ctx.getClientIp(), now, IP_LIMIT) ||

@@ -134,3 +134,52 @@ Token 解析在 Order 0 对所有路径静默执行，包括无需认证的路�
 - `com.danmakulive.auth.config.AuthConfig`
 - `com.danmakulive.auth.interceptor.TokenInterceptor`
 - `com.danmakulive.auth.interceptor.AuthInterceptor`
+
+---
+
+## 6. 性能测试体系（2026-06-09 从 LivePulse 迁移重建）
+
+### 三层架构
+
+```
+Layer 3: Gatling 端到端压测 (danmakulive-gatling/)
+         DanmakuSimulation / SpikeSimulation / BroadcastLatencySimulation
+         运行: cd danmakulive-gatling && mvn gatling:test -Dusers=500
+
+Layer 2: JUnit 集成性能测试 (com.danmakulive.perf)
+         RateLimiterPerfTest / PipelineThroughputTest /
+         WebSocketBroadcastLatencyTest / WebSocketCapacityTest
+         运行: mvn test -Dtest="com.danmakulive.perf.*"
+
+Layer 1: JMH 微基准 (com.danmakulive.benchmark)
+         BroadcastPerConnectionBenchmark (已有) +
+         RateLimitStageBenchmark / SensitiveWordFilterBenchmark (新增)
+         运行: mvn package && java -jar target/benchmarks.jar
+```
+
+### 与原 LivePulse 性能测试的差异
+
+| 维度 | LivePulse | danmakulive | 差异 |
+|------|-----------|-------------|------|
+| 限流单次延迟 | 1.26ms（3次 Redis 往返） | 预期 ~0.4ms（1次，已合并 Lua） | 显著更快 |
+| Pipeline 入口 | 仅测试用 REST 端点 | 已有 POST /api/v1/rooms/{roomId}/danmaku | 无需添加 |
+| Gatling | 子模块 livepulse-gatling | 独立项目 danmakulive-gatling/ | 避免父 POM 改为多模块 |
+| 数据准备 | 无 | scripts/import_data.py（VTuber 1B + DanmakuTPP） | 新增能力 |
+
+### LivePulse 原始基线数据（对照组）
+
+| 维度 | 指标 | 数值 |
+|------|------|------|
+| 吞吐 | 峰值 QPS (c50) | 1886 msg/s |
+| 吞吐 | P50/P99 (c10) | 6ms / 18ms |
+| 广播延迟 | 50 订阅者 P99 | 48ms |
+| 广播延迟 | 100 订阅者 P99 | 106ms |
+| 连接容量 | 5000 并发 | ~125KB/conn |
+| 限流 | 单次 Lua 3次 | 1.26ms |
+
+相关文件：
+- `src/test/java/com/danmakulive/benchmark/` (JMH)
+- `src/test/java/com/danmakulive/perf/` (JUnit 集成性能测试)
+- `danmakulive-gatling/src/test/scala/` (Gatling)
+- `scripts/perf/` (辅助脚本)
+- `docs/perf/` (性能测试报告)
