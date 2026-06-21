@@ -25,5 +25,5 @@ danmakulive-jmeter/report*/
 danmakulive-jmeter/segments_*/
 
 # Dev notes (keep local)
-.claude/notes/
-.claude/CLAUDE.md
+.claude/
+docs/
