@@ -115,3 +115,31 @@ LivePulse 原项目有完善的 5 维度性能测试体系（Pipeline 吞吐 / �
 - [ ] Token 缓存：两次同样 token 的请求，第二次应从 Caffeine 命中
 - [ ] Token 登出后请求需认证接口应返回 401
 - [ ] curl -H "Accept-Encoding: gzip" 确认 Content-Encoding: gzip
+
+## 2026-06-22: 项目推送至 GitHub
+
+### 问题背景
+项目此前只有本地 git 仓库，无远程备份和协作能力。
+
+### 方案设计
+创建 GitHub 仓库 `kimwest1996/danmakulive`，提交全部当前改动并推送。
+
+### 文件变更清单
+| # | 文件 | 改动说明 |
+|---|------|---------|
+| 1 | .gitignore | 新增 `*.log`、`*.jtl`、JMeter report 排除 |
+| 2 | pom.xml | 依赖更新 |
+| 3 | danmakulive-gatling/ | 新增 Gatling STOMP 压测项目 |
+| 4 | danmakulive-jmeter/*.jmx | 新增 JMeter 测试计划 |
+| 5 | docs/interview-prep.md, docs/perf/ | 新增面试准备文档和性能报告 |
+| 6 | scripts/ | 新增数据导入和压测脚本 |
+| 7 | src/test/.../benchmark/, src/test/.../perf/ | 新增 JMH 微基准和 JUnit 集成性能测试 |
+| 8 | src/main/ 多处 | 缓存配置、Pipeline 优化、视频弹幕修复 |
+
+### 提交记录
+| 时间 | commit hash | commit message |
+|------|-------------|----------------|
+| 2026-06-22 | 25f2d79 | chore: add performance tests, perf docs, and latest source updates |
+
+### 仓库地址
+https://github.com/kimwest1996/danmakulive
